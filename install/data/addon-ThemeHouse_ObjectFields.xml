@@ -1,0 +1,559 @@
+<?xml version="1.0" encoding="utf-8"?>
+<addon addon_id="ThemeHouse_ObjectFields" title="[⌂] Object Fields" version_string="1.0.0" version_id="1447261019" url="http://xf.themehouse.io/" install_callback_class="ThemeHouse_Install" install_callback_method="install" uninstall_callback_class="ThemeHouse_Install" uninstall_callback_method="uninstall">
+  <admin_navigation>
+    <navigation navigation_id="objectFields" parent_navigation_id="classes" display_order="10" link="object-fields" admin_permission_id="object" debug_only="0" hide_no_children="0"/>
+  </admin_navigation>
+  <admin_permissions/>
+  <admin_style_properties/>
+  <admin_templates>
+    <template title="object_field_delete"><![CDATA[<xen:title>{xen:phrase confirm_deletion_of_field}: {$field.title}</xen:title>
+<xen:h1>{xen:phrase confirm_deletion_of_field}</xen:h1>
+
+<xen:navigation>
+	<xen:breadcrumb href="{xen:adminlink 'object-fields/edit', $field, 'addon_id={$field.addon_id}'}">{$field.title}</xen:breadcrumb>
+</xen:navigation>
+
+<xen:require css="delete_confirmation.css" />
+
+<xen:form action="{xen:adminlink 'object-fields/delete', $field, 'addon_id={$field.addon_id}'}" class="deleteConfirmForm formOverlay">
+	<p>{xen:phrase please_confirm_that_you_want_to_delete_following_field}:</p>
+	<strong><a href="{xen:adminlink 'object-fields/edit', $field, 'addon_id={$field.addon_id}'}">{$field.title}</a></strong>
+
+	<xen:submitunit save="{xen:phrase delete_field}" />
+	<input type="hidden" name="_xfConfirm" value="1" />
+</xen:form>]]></template>
+    <template title="object_field_edit"><![CDATA[<xen:title>{xen:if {$field.field_id}, '{xen:phrase edit_field}: {$field.title}', '{xen:phrase create_new_field}'}</xen:title>
+
+<xen:if is="{$field.field_id}">
+	<xen:topctrl>
+		<a href="{xen:adminlink object-fields/export, $field}" class="button">{xen:phrase export_field}</a>
+	</xen:topctrl>
+</xen:if>
+
+<xen:if is="{$field.field_id}">
+	<xen:navigation>
+		<xen:breadcrumb href="{xen:adminlink object-fields}#{xen:helper listitemid, $field.field_id}">{$masterTitle}</xen:breadcrumb>
+	</xen:navigation>
+</xen:if>
+
+<xen:form action="{xen:adminlink 'object-fields/save', $field}" class="AutoValidator" data-redirect="on">
+
+	<ul class="tabs Tabs" data-panes="#objectFieldPanes > li">
+		<li class="active"><a>{xen:phrase basic_information}</a></li>
+		<xen:if is="!{$existingType} OR {$existingType} == 'text'">
+			<li><a>{xen:phrase options_for_text_fields}</a></li>
+		</xen:if>
+		<xen:if is="!{$existingType} OR {$existingType} == 'single' OR {$existingType} == 'multiple'">
+			<li><a>{xen:phrase options_for_choice_fields}</a></li>
+		</xen:if>
+		<li><a>{xen:phrase classes_and_permissions}</a></li>
+	</ul>
+	
+	<ul id="objectFieldPanes">
+		<li>
+			<xen:if is="{$field.field_id}">
+				<xen:controlunit label="{xen:phrase field_id}:">
+					<xen:html>{$field.field_id}</xen:html>
+					<xen:explain>{xen:phrase this_is_unique_identifier_for_field_cannot_be_changed}</xen:explain>
+				</xen:controlunit>
+			<xen:else />
+				<xen:textboxunit label="{xen:phrase field_id}:" name="new_field_id">
+					<xen:explain>{xen:phrase this_is_unique_identifier_for_field_cannot_be_changed}</xen:explain>
+				</xen:textboxunit>
+			</xen:if>
+		
+			<fieldset>
+				<xen:textboxunit label="{xen:phrase title}:" name="title" value="{$masterTitle}" data-liveTitleTemplate="{xen:if {$field.field_id},
+					'{xen:phrase edit_field}: <em>%s</em>',
+					'{xen:phrase create_new_field}: <em>%s</em>'}" />
+					
+				<xen:textboxunit label="{xen:phrase description}:" name="description" value="{$masterDescription}" rows="2" inputclass="Elastic" />
+			</fieldset>
+			
+			<fieldset>
+				<xen:selectunit label="{xen:phrase field_group}:" name="field_group_id" value="{$field.field_group_id}">
+					<xen:option value="0" label="({xen:phrase none})" />
+					<xen:options source="$fieldGroupOptions" />
+				</xen:selectunit>
+				
+				<xen:spinboxunit label="{xen:phrase display_order}:" name="display_order" value="{$field.display_order}" min="0" />
+			</fieldset>
+			
+			<xen:if is="!{$existingType}">
+				<fieldset>
+					<xen:radiounit label="{xen:phrase field_type}:" name="field_type" value="{$field.field_type}">
+						<xen:options source="$validFieldTypes" />
+					</xen:radiounit>
+				</fieldset>
+			</xen:if>
+		</li>	
+		<xen:if is="!{$existingType} OR {$existingType} == 'text'">
+			<li>
+				<!--<h3 class="textHeading">{xen:phrase options_for_text_fields}</h3>-->
+			
+				<xen:if is="{$existingType}">
+					<xen:radiounit label="{xen:phrase field_type}:" name="field_type" value="{$field.field_type}">
+						<xen:options source="$validFieldTypes" />
+					</xen:radiounit>
+				</xen:if>
+				
+				<fieldset>
+					<xen:radiounit label="{xen:phrase value_match_requirements}:" name="match_type" value="{$field.match_type}" hint="{xen:phrase empty_values_always_allowed}">
+						<xen:option value="none">{xen:phrase none}</xen:option>
+						<xen:option value="number">{xen:phrase number}</xen:option>
+						<xen:option value="alphanumeric">{xen:phrase a_z_0_9_and_only}</xen:option>
+						<xen:option value="email">{xen:phrase email_address}</xen:option>
+						<xen:option value="url">URL</xen:option>
+						<xen:option value="regex" label="{xen:phrase regular_expression}:">
+							<xen:textbox name="match_regex" value="{$field.match_regex}" />
+						</xen:option>
+						<xen:option value="callback" label="{xen:phrase php_callback}:">
+							<xen:disabled>
+								<xen:textbox name="match_callback_class" value="{$field.match_callback_class}" placeholder="{xen:phrase class}" size="25" />
+								::
+								<xen:textbox name="match_callback_method" value="{$field.match_callback_method}" placeholder="{xen:phrase method}" size="25" />
+							</xen:disabled>
+						</xen:option>
+					</xen:radiounit>
+				</fieldset>
+				
+				<fieldset>
+					<xen:spinboxunit label="{xen:phrase maximum_length}:" name="max_length" value="{$field.max_length}" min="0" />
+				</fieldset>
+			</li>
+		<xen:else />
+			<input type="hidden" name="match_type" value="none" />
+		</xen:if>
+		<xen:if is="!{$existingType} OR {$existingType} == 'single' OR {$existingType} == 'multiple'">
+			<li>
+				<!--<h3 class="textHeading">{xen:phrase options_for_choice_fields}</h3>-->
+			
+				<xen:if is="{$existingType}">
+					<xen:radiounit label="{xen:phrase field_type}:" name="field_type" value="{$field.field_type}">
+						<xen:options source="$validFieldTypes" />
+					</xen:radiounit>
+				</xen:if>
+				
+				<fieldset>
+					<xen:controlunit label="{xen:phrase possible_choices}:">
+						<ul class="FieldChoices">
+							<xen:foreach loop="$masterFieldChoices" key="$choice" value="$text">
+								<li>
+									<input type="text" name="field_choice[]" value="{$choice}" class="textCtrl" placeholder="{xen:phrase value_a_z_0_9_and_only}" size="25" maxlength="25" />
+									<input type="text" name="field_choice_text[]" value="{$text}" class="textCtrl" placeholder="{xen:phrase text}" size="25" />
+								</li>
+							</xen:foreach>
+							<li>
+								<input type="text" name="field_choice[]" class="textCtrl" placeholder="{xen:phrase value_a_z_0_9_and_only}" size="25" maxlength="25" />
+								<input type="text" name="field_choice_text[]" class="textCtrl" placeholder="{xen:phrase text}" size="25" />
+							</li>
+						</ul>
+						<input type="button" value="{xen:phrase add_additional_choice}" class="button smallButton FieldAdder" data-source="ul.FieldChoices li" />
+						<p class="explain">{xen:phrase value_represents_internal_value_for_choice_text_is_displayed}</p>
+					</xen:controlunit>
+				</fieldset>
+			</li>
+		</xen:if>
+		<li>
+			<xen:controlunit label="{xen:phrase usable_by_user_groups}:">
+				<xen:include template="object_field_helper_user_groups" />
+			</xen:controlunit>
+			
+			<script>
+			$(function()
+			{
+				$('#SelectAllClasses').click(function(e)
+				{
+					$('#ApplicableClasses').find('option').attr('selected', this.checked);
+				});
+			});
+			</script>
+			
+			<fieldset id="ApplicableClasses">
+				<xen:controlunit label="{xen:phrase applicable_classes}:">
+					<xen:html>
+						<xen:include template="object_field_helper_classes" />
+						<div><label class="muted"><input type="checkbox" id="SelectAllClasses" /> <i>{xen:phrase select_all}</i></label></div>
+					</xen:html>
+				</xen:controlunit>
+			</fieldset>
+		</li>
+	</ul>
+
+	<xen:submitunit save="{xen:phrase save_field}">
+		<xen:if is="{$field.field_id}">
+			<input type="button" value="{xen:phrase delete_field}..." accesskey="d" class="button OverlayTrigger"
+				data-href="{xen:adminlink 'object-fields/delete', $field}" />
+		</xen:if>
+	</xen:submitunit>
+</xen:form>]]></template>
+    <template title="object_field_group_delete"><![CDATA[<xen:title>{xen:phrase confirm_deletion_of_field_group}: {$fieldGroup.title}</xen:title>
+<xen:h1>{xen:phrase confirm_deletion_of_field_group}</xen:h1>
+
+<xen:navigation>
+	<xen:breadcrumb href="{xen:adminlink 'object-fields/edit-group', '', 'field_group_id={$fieldGroup.field_group_id}'}">{$fieldGroup.title}</xen:breadcrumb>
+</xen:navigation>
+
+<xen:require css="delete_confirmation.css" />
+
+<xen:form action="{xen:adminlink 'object-fields/delete-group', '', 'field_group_id={$fieldGroup.field_group_id}'}" class="deleteConfirmForm formOverlay">
+	<p>{xen:phrase please_confirm_that_you_want_to_delete_following_field_group}:</p>
+	<strong><a href="{xen:adminlink 'object-fields/edit-group', '', 'field_group_id={$fieldGroup.field_group_id}'}">{$fieldGroup.title}</a></strong>
+	<p class="muted">{xen:phrase fields_will_be_disassociated}</p>
+
+	<xen:submitunit save="{xen:phrase delete_field_group}" />
+	<input type="hidden" name="_xfConfirm" value="1" />
+</xen:form>]]></template>
+    <template title="object_field_group_edit"><![CDATA[<xen:title>{xen:if $fieldGroup.field_group_id, '{xen:phrase edit_field_group}: {$masterTitle}', '{xen:phrase create_new_field_group}'}</xen:title>
+
+<xen:require css="public:object_fields.css" />
+
+<xen:if is="{$fieldGroup.field_group_id}">
+	<xen:navigation>
+		<xen:breadcrumb href="{xen:adminlink object-fields}#_group{xen:helper listitemid, $fieldGroup.field_group_id}">{$masterTitle}</xen:breadcrumb>
+	</xen:navigation>
+</xen:if>
+
+<xen:form action="{xen:adminlink object-fields/save-group}">
+
+	<xen:textboxunit name="title" value="{$masterTitle}" label="{xen:phrase title}:" data-liveTitleTemplate="{xen:if {$fieldGroup.field_group_id},
+		'{xen:phrase edit_field_group}: <em>%s</em>',
+		'{xen:phrase create_new_field_group}: <em>%s</em>'}" />
+	
+	<xen:spinboxunit name="display_order" value="{$fieldGroup.display_order}" label="{xen:phrase display_order}:" min="0" step="10" />
+	
+	<xen:submitunit save="{xen:phrase save_field_group}">
+		<xen:if is="{$fieldGroup.field_group_id}">
+			<input type="button" value="{xen:phrase delete_field_group}..." accesskey="d" class="button OverlayTrigger"
+				data-href="{xen:adminlink 'object-fields/delete-group', '', 'field_group_id={$fieldGroup.field_group_id}'}" />
+		</xen:if>
+	</xen:submitunit>
+	
+	<input type="hidden" name="field_group_id" value="{$fieldGroup.field_group_id}" />
+
+</xen:form>]]></template>
+    <template title="object_field_group_list"><![CDATA[<xen:title>{xen:phrase object_field_groups}</xen:title>
+
+<xen:topctrl><a href="{xen:adminlink object-fields/add-group}" class="button OverlayTrigger">+ {xen:phrase create_new_object_field_group}</a></xen:topctrl>
+
+<xen:require css="filter_list.css" />
+<xen:require js="js/xenforo/filter_list.js" />
+
+<xen:form action="{xen:adminlink object-fields/groups}" class="section">
+	<xen:if is="{$fieldGroups}">
+
+		<h2 class="subHeading">
+			<xen:include template="filter_list_controls" />
+			{xen:phrase object_field_groups}
+		</h2>
+
+		<ol class="FilterList">
+			<xen:foreach loop="$fieldGroups" value="$fieldGroup">
+				<xen:listitem
+					id="{$fieldGroup.field_group_id}"
+					label="{$fieldGroup.title}"
+					href="{xen:adminlink object-fields/edit-group, '', 'field_group_id={$fieldGroup.field_group_id}'}"
+					delete="{xen:adminlink object-fields/delete-group, '', 'field_group_id={$fieldGroup.field_group_id}'}">
+				</xen:listitem>
+			</xen:foreach>
+		</ol>
+
+		<p class="sectionFooter">{xen:phrase showing_x_of_y_items, 'count=<span class="FilterListCount">{xen:count $fieldGroups}</span>', 'total={xen:count $fieldGroups}'}</p>
+
+	<xen:else />
+		<div class="noResults">{xen:phrase no_object_field_groups_have_been_added_yet}</div>
+	</xen:if>
+</xen:form>]]></template>
+    <template title="object_field_helper_classes"><![CDATA[<select name="class_ids[]" class="textCtrl" multiple="multiple" size="8">
+	<option value="0" {xen:selected 'in_array(0, {$selClassIds}, true)'}>({xen:phrase none})</option>
+	<xen:foreach loop="$classes" value="$class">
+		<option value="{$class.class_id}" {xen:selected 'in_array({$class.class_id}, {$selClassIds}, true)'}>{$class.title}</option>
+	</xen:foreach>
+</select>]]></template>
+    <template title="object_field_helper_user_groups"><![CDATA[<xen:include template="thread_prefix_helper_user_groups" />]]></template>
+    <template title="object_field_import"><![CDATA[<xen:title>{xen:phrase import_field}</xen:title>
+
+<xen:form action="{xen:adminlink object-fields/import}" upload="true">
+
+	<xen:uploadunit label="{xen:phrase import_from_uploaded_file}:" name="upload" />
+	
+	<xen:radiounit label="{xen:phrase import_as}:" name="target">
+
+		<xen:option label="{xen:phrase field_in_group}:" value="new" selected="true">
+			<xen:select name="field_group_id">
+				<xen:option value="0" label="({xen:phrase none})" />
+				<xen:options source="$fieldGroupOptions" />
+			</xen:select>
+		</xen:option>
+		
+		<xen:option label="{xen:phrase overwrite_field}:" value="overwrite">
+			<xen:select name="overwrite_field_id">
+				<xen:foreach loop="$fields" value="$field">
+					<xen:option value="{$field.field_id}">{$field.title}</xen:option>
+				</xen:foreach>
+			</xen:select>
+		</xen:option>
+
+	</xen:radiounit>
+	
+	<xen:submitunit save="{xen:phrase import}" />
+
+	<input type="hidden" name="_xfConfirm" value="1" />
+</xen:form>]]></template>
+    <template title="object_field_list"><![CDATA[<xen:title>{xen:phrase custom_object_fields}</xen:title>
+
+<xen:topctrl>
+	<a href="{xen:adminlink object-fields/add}" class="button">+ {xen:phrase create_new_field}</a>
+	<a href="{xen:adminlink object-fields/add-group}" class="button OverlayTrigger">+ {xen:phrase create_new_field_group}</a>
+	<a href="{xen:adminlink object-fields/import}" class="button">{xen:phrase import_field}</a>
+</xen:topctrl>
+
+<xen:require css="filter_list.css" />
+<xen:require js="js/xenforo/filter_list.js" />
+
+<xen:form action="{xen:adminlink object-fields/quick-set}">
+	<xen:if is="{$addOns}">
+		<div class="section">
+			<h2 class="subHeading">
+				<xen:include template="filter_list_controls" />
+				{xen:phrase custom_object_fields}
+			</h2>
+	
+			<ol class="FilterList" id="ObjectFieldList">
+			<xen:foreach loop="$addOns" key="$addOnId" value="$fields">
+				<h3 class="textHeading" id="{xen:helper listitemid, 'addon_{$addOnId}'}">
+					<xen:if is="{$addOnId}">{$addOnTitles.{$addOnId}}<xen:else />({xen:phrase ungrouped})</xen:if>
+				</h3>
+				<xen:if is="{$fields}">
+					<ol id="addon{$addOnId}">
+						<xen:foreach loop="$fields" value="$field">
+							<xen:listitem
+								id="{$field.field_id}"
+								label="{$field.title}"
+								snippet="{xen:if '{$field.addon_id}', '{$field.addon_title} / ', ''}{$fieldTypes.{$field.field_type}.label}"
+								href="{xen:adminlink object-fields/edit, $field, 'addon_id={$field.addon_id}'}"
+								delete="{xen:adminlink object-fields/delete, $field, 'addon_id={$field.addon_id}'}">
+								<xen:html><label class="secondaryContent"><input type="checkbox" name="field_ids[]" value="{$field.field_id}" /></label></xen:html>
+							</xen:listitem>
+						</xen:foreach>
+					</ol>
+				</xen:if>
+			</xen:foreach>
+			</ol>
+	
+			<p class="sectionFooter">{xen:phrase showing_x_of_y_items, 'count=<span class="FilterListCount">{xen:number $fieldCount}</span>', 'total={xen:number $fieldCount}'}</p>
+		</div>
+
+		<div class="footerControls">
+			<div class="scrollSide">
+				<label class="footerControl"><input type="checkbox" class="CheckAll" data-target="#ObjectFieldList" /> {xen:phrase select_all}</label>
+				<input type="submit" value="{xen:phrase quick_set_selected_items}" class="button OverlayTrigger footerControl" />
+			</div>
+		</div>
+
+	<xen:else />
+		<div class="noResults">{xen:phrase no_custom_object_fields_have_been_defined}</div>
+	</xen:if>
+</xen:form>]]></template>
+    <template title="object_field_quickset_editor"><![CDATA[<xen:title>{xen:phrase quick_set_object_fields}</xen:title>
+
+<xen:require css="public:object_fields.css" />
+
+<xen:if is="{$field.field_id}">
+	<xen:navigation>
+		<xen:breadcrumb href="{xen:adminlink object-fields}#{xen:helper listitemid, $field.field_id}">{$masterTitle}</xen:breadcrumb>
+	</xen:navigation>
+</xen:if>
+
+<xen:form action="{xen:adminlink object-fields/quick-set}">
+
+	<xen:controlunit label="{xen:phrase apply_options_to_these_fields}:">
+		<ul>
+			<xen:foreach loop="$fields" key="$_fieldId" value="$_field">
+				<li style="float: left; margin-right: 5px;"><label class="{$_field.css_class}"><input type="checkbox" name="field_ids[]" value="{$_fieldId}" checked="checked" /> {$_field.title}</label></li>
+			</xen:foreach>
+		</ul>
+	</xen:controlunit>
+
+	<ul class="tabs Tabs" data-panes="#fieldPanes > li">
+		<li class="active"><a>{xen:phrase basic_information}</a></li>
+		<li><a>{xen:phrase classes_and_permissions}</a></li>
+	</ul>
+
+	<ul id="fieldPanes">
+		<li>
+			<xen:checkboxunit label="{xen:phrase field_group}:">
+				<xen:option name="apply_field_group_id" label="{xen:phrase apply_field_group_options}:">
+					<xen:select name="field_group_id" value="{$field.field_group_id}">
+						<xen:option value="0" label="({xen:phrase none})" />
+						<xen:options source="$fieldGroupOptions" />
+					</xen:select>
+				</xen:option>
+			</xen:checkboxunit>
+		</li>
+		<li>
+			<xen:checkboxunit label="{xen:phrase usable_by_user_groups}:">
+				<xen:option name="apply_user_group_ids" label="{xen:phrase apply_user_group_options}:">
+					<xen:disabled>			
+						<xen:include template="object_field_helper_user_groups" />
+					</xen:disabled>
+				</xen:option>
+			</xen:checkboxunit>
+		
+			<fieldset>
+				<xen:checkboxunit label="{xen:phrase applicable_classes}:">
+					<xen:option name="apply_class_ids" label="{xen:phrase apply_class_options}:">
+						<xen:disabled>			
+							<xen:include template="object_field_helper_classes" />
+						</xen:disabled>
+					</xen:option>
+				</xen:checkboxunit>
+			</fieldset>
+		</li>
+	</ul>
+	
+	<xen:submitunit save="{xen:phrase quick_set_object_fields}" />
+	
+	<xen:if is="{$field.field_id}">
+		<input type="hidden" name="field_id" value="{$field.field_id}" />
+	</xen:if>
+	
+	<input type="hidden" name="_xfConfirm" value="1" />
+
+</xen:form>]]></template>
+    <template title="object_field_quickset_field_chooser"><![CDATA[<xen:title>{xen:phrase quick_set_object_fields}</xen:title>
+
+<xen:form action="{xen:adminlink object-fields/quick-set}">
+	
+	<xen:selectunit name="field_id" label="{xen:phrase copy_settings_from}:">
+		<xen:option value="-1">({xen:phrase none})</xen:option>
+		<xen:options source="$fieldOptions" />
+		<xen:explain>{xen:phrase on_next_page_you_may_apply_settings_to_all_selected_fields}</xen:explain>
+	</xen:selectunit>
+	
+	<xen:submitunit save="{xen:phrase proceed}..." />
+	
+	<xen:foreach loop="$fieldIds" value="$fieldId">
+		<input type="hidden" name="field_ids[]" value="{$fieldId}" />
+	</xen:foreach>
+
+</xen:form>]]></template>
+    <template title="th_class_edit_panes_customfields"><![CDATA[<xen:if is="{$customFields}">
+	<li>
+		<xen:require js="js/xenforo/acp_forum_editor.js" />
+		
+		<xen:controlunit label="{xen:phrase available_fields}:" class="multiple checkboxColumns AvailableFields">
+			<xen:hint><br /><label><input type="checkbox" class="CheckAll" data-target="dl.AvailableFields" /> {xen:phrase select_all}</label></xen:hint>
+			<xen:html>
+				<xen:checkbox>
+					<xen:foreach loop="$customFields" key="$fieldId" value="$field">
+						<xen:option name="available_fields[]" value="{$fieldId}" selected="in_array({$fieldId}, {$classFields}, true)">{$field.title}</xen:option>
+					</xen:foreach>
+				</xen:checkbox>
+			</xen:html>
+		</xen:controlunit>
+
+		<fieldset>
+			<xen:controlunit label="{xen:phrase required_fields}:" class="multiple checkboxColumns RequiredFields">
+				<xen:hint><br /><label><input type="checkbox" class="CheckAll" data-target="dl.RequiredFields" /> {xen:phrase select_all}</label></xen:hint>
+				<xen:html>
+					<xen:checkbox>
+						<xen:foreach loop="$customFields" key="$fieldId" value="$field">
+							<xen:option name="required_fields[]" value="{$fieldId}" selected="in_array({$fieldId}, {$requiredFields}, true)">{$field.title}</xen:option>
+						</xen:foreach>
+					</xen:checkbox>
+				</xen:html>
+			</xen:controlunit>
+		</fieldset>
+
+		<fieldset>
+			<xen:selectunit name="title_field" value="{$class.title_field}"
+				label="{xen:phrase object_title}:"
+				inputclass="PrefixManager" data-checkboxes="dl.RequiredFields input:checkbox">
+				<xen:option label="({xen:phrase none})" value="" />
+				<xen:foreach loop="$customFields" key="$fieldId" value="$field">
+					<xen:option value="{$fieldId}" label="{$field.title}" />
+				</xen:foreach>
+				<xen:explain>{xen:phrase object_title_field_explain}</xen:explain>
+			</xen:selectunit>
+
+			<xen:selectunit name="subtitle_field" value="{$class.subtitle_field}"
+				label="{xen:phrase object_subtitle}:"
+				inputclass="PrefixManager" data-checkboxes="dl.AvailableFields input:checkbox">
+				<xen:option label="({xen:phrase none})" value="" />
+				<xen:foreach loop="$customFields" key="$fieldId" value="$field">
+					<xen:option value="{$fieldId}" label="{$field.title}" />
+				</xen:foreach>
+				<xen:explain>{xen:phrase object_subtitle_field_explain}</xen:explain>
+			</xen:selectunit>
+		</fieldset>
+	</li>
+	<li>
+		<xen:include template="custom_fields_edit">
+			<xen:map from="$customFields" to="$customFields" />
+		</xen:include>
+	</li>
+</xen:if>]]></template>
+    <template title="th_class_edit_tabs_customfields"><![CDATA[<xen:if is="{$customFields}">
+	<li><a>{xen:phrase object_fields}</a></li>
+	<li><a>{xen:phrase default_values}</a></li>
+</xen:if>]]></template>
+    <template title="th_object_basic_info_edit_pane_customfields"><![CDATA[<xen:if is="!{$class.title_field}">
+	<xen:textboxunit label="{xen:phrase title}:" name="title" value="{$object.title}" data-liveTitleTemplate="{xen:if {$object.object_id},
+		'{xen:phrase edit_object}: <em>%s</em>',
+		'{xen:phrase create_new_object}: <em>%s</em>'}" />
+</xen:if>
+
+<xen:if is="!{$class.subtitle_field}">
+	<xen:textboxunit label="{xen:phrase subtitle}:" name="subtitle" value="{$object.subtitle}" />
+</xen:if>
+
+<xen:if is="{$customFields.0.fields}">
+	<xen:include template="custom_fields_edit">
+		<xen:map from="$customFields.0.fields" to="$customFields" />
+	</xen:include>
+</xen:if>]]></template>
+    <template title="th_object_edit_panes_customfields"><![CDATA[<xen:foreach loop="$customFields" value="$customFieldGroup">
+	<xen:if is="{$customFieldGroup.title}">
+		<li>
+			<xen:include template="custom_fields_edit">
+				<xen:map from="$customFieldGroup.fields" to="$customFields" />
+			</xen:include>
+		</li>
+	</xen:if>
+</xen:foreach>]]></template>
+    <template title="th_object_edit_tabs_customfields"><![CDATA[<xen:foreach loop="$customFields" value="$customFieldGroup">
+	<xen:if is="{$customFieldGroup.title}">
+		<li><a>{$customFieldGroup.title}</a></li>
+	</xen:if>
+</xen:foreach>]]></template>
+  </admin_templates>
+  <admin_template_modifications/>
+  <code_events/>
+  <code_event_listeners>
+    <listener event_id="init_dependencies" execute_order="10" callback_class="ThemeHouse_ObjectFields_Listener_InitDependencies" callback_method="initDependencies" active="1" hint="" description=""/>
+    <listener event_id="load_class_controller" execute_order="10" callback_class="ThemeHouse_ObjectFields_Listener_LoadClassController" callback_method="loadClassController" active="1" hint="" description=""/>
+    <listener event_id="load_class_datawriter" execute_order="10" callback_class="ThemeHouse_ObjectFields_Listener_LoadClassDataWriter" callback_method="loadClassDataWriter" active="1" hint="" description=""/>
+  </code_event_listeners>
+  <cron/>
+  <email_templates/>
+  <email_template_modifications/>
+  <optiongroups/>
+  <permissions>
+    <permission_groups/>
+    <permissions/>
+    <interface_groups/>
+  </permissions>
+  <phrases/>
+  <route_prefixes/>
+  <style_properties/>
+  <templates/>
+  <public_template_modifications>
+    <modification template="footer" modification_key="th_copyrightNotice_objectFields" description="Copyright notice for [⌂] Object Fields" execution_order="1" enabled="1" action="callback">
+      <find><![CDATA[/{xen:phrase (?:xenforo|extra)_copyright}/]]></find>
+      <replace><![CDATA[ThemeHouse_Listener_InitDependencies::copyrightNotice]]></replace>
+    </modification>
+  </public_template_modifications>
+  <bb_code_media_sites/>
+  <bb_codes/>
+</addon>
